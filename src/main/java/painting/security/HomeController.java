@@ -1,4 +1,4 @@
-package painting.token;
+package painting.security;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;

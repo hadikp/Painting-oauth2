@@ -1,4 +1,4 @@
-package painting.token;
+package painting.security;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

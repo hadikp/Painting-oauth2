@@ -1,4 +1,4 @@
-package painting.token;
+package painting.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.jwk.JWK;
@@ -47,7 +47,7 @@ public class WebSecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
         return http.csrf(csrf -> csrf.disable())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) //disable session
                 .exceptionHandling(configurer -> configurer.authenticationEntryPoint(WebSecurityConfig::handleException))
                 .authorizeHttpRequests(auth ->auth.anyRequest().authenticated())
                 .httpBasic(withDefaults())

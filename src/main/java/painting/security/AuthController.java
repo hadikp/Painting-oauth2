@@ -1,4 +1,4 @@
-package painting.token;
+package painting.security;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;

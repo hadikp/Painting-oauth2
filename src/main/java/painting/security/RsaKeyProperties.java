@@ -1,4 +1,4 @@
-package painting.token;
+package painting.security;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
