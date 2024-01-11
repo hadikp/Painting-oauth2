@@ -11,6 +11,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -34,8 +36,11 @@ public class WebSecurityConfig {
 
     private final RsaKeyProperties rsaKeys;
 
-    public WebSecurityConfig(RsaKeyProperties rsaKey) {
-        this.rsaKeys = rsaKey;
+    private JwtAuthEntryPoint jwtAuthEntryPoint;
+
+    public WebSecurityConfig(RsaKeyProperties rsaKeys, JwtAuthEntryPoint jwtAuthEntryPoint) {
+        this.rsaKeys = rsaKeys;
+        this.jwtAuthEntryPoint = jwtAuthEntryPoint;
     }
 
     @Bean
@@ -46,11 +51,13 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
         return http.csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth ->auth.requestMatchers("/api/admin").hasAuthority("ADMIN")
+                                                   .requestMatchers("/").permitAll()
+                                                   .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) //disable session
                 .exceptionHandling(configurer -> configurer.authenticationEntryPoint(WebSecurityConfig::handleException))
-                .authorizeHttpRequests(auth ->auth.anyRequest().authenticated())
-                .httpBasic(withDefaults())
+                .httpBasic(security -> security.authenticationEntryPoint(jwtAuthEntryPoint))
                 .build();
     }
 
@@ -58,6 +65,11 @@ public class WebSecurityConfig {
         PrintWriter writer = resp.getWriter();
         writer.println(new ObjectMapper().writeValueAsString(new AuthorizationResponse("error", "Unauthorized")));
         resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 
     @Bean
