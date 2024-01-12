@@ -22,13 +22,11 @@ import java.util.stream.Collectors;
 public class TokenService {
 
     private final JwtEncoder jwtEncoder;
-    private RSAPublicKey publicKey;
-    private RSAPublicKey RSAPublicKey;
+    private RsaKeyProperties keyProperties;
 
-    public TokenService(JwtEncoder jwtEncoder, RSAPublicKey publicKey, java.security.interfaces.RSAPublicKey rsaPublicKey) {
+    public TokenService(JwtEncoder jwtEncoder, RsaKeyProperties keyProperties) {
         this.jwtEncoder = jwtEncoder;
-        this.publicKey = publicKey;
-        RSAPublicKey = rsaPublicKey;
+        this.keyProperties = keyProperties;
     }
 
     public String generateToken(Authentication authentication){
@@ -37,7 +35,7 @@ public class TokenService {
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("self")
                 .issuedAt(now)
-                .expiresAt(now.plus(1, ChronoUnit.HOURS))
+                .expiresAt(now.plus(1, ChronoUnit.MINUTES))
                 .subject(authentication.getName())
                 .claim("scope", scope) //user, admin
                 .build();
@@ -46,10 +44,12 @@ public class TokenService {
 
     public Boolean validateToken(String token) {
         SignedJWT signedJWT;
-        RSAPublicKey publicKey;
         try {
             signedJWT = SignedJWT.parse(token);
-            JWSVerifier verifier = new RSASSAVerifier((RSAPublicKey))  )
+            JWSVerifier verifier = new RSASSAVerifier(keyProperties.publicKey());
+
+            System.out.println(signedJWT.getJWTClaimsSet().getSubject());
+            System.out.println(signedJWT.getJWTClaimsSet().getClaim("exp"));
             return signedJWT.verify(verifier);
         } catch (ParseException | JOSEException e) {
             return false;
