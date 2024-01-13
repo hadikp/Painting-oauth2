@@ -1,11 +1,15 @@
 package painting.security;
 
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSVerifier;
-import com.nimbusds.jose.crypto.RSASSAVerifier;
-import com.nimbusds.jwt.SignedJWT;
-import java.security.interfaces.RSAPublicKey;
+import com.nimbusds.jose.*;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
+import com.nimbusds.jose.proc.*;
+import com.nimbusds.jwt.JWTClaimNames;
+import com.nimbusds.jwt.JWTClaimsSet;
 
+import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
+import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
+import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -13,9 +17,13 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,7 +41,7 @@ public class TokenService {
         Instant now = Instant.now();
         String scope = authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.joining(" "));
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("self")
+                .issuer("https://c2id.com")
                 .issuedAt(now)
                 .expiresAt(now.plus(1, ChronoUnit.MINUTES))
                 .subject(authentication.getName())
@@ -42,17 +50,38 @@ public class TokenService {
         return this.jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
     }
 
-    public Boolean validateToken(String token) {
-        SignedJWT signedJWT;
-        try {
-            signedJWT = SignedJWT.parse(token);
-            JWSVerifier verifier = new RSASSAVerifier(keyProperties.publicKey());
+    public Boolean validateToken(String token) throws MalformedURLException {
+        ConfigurableJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
+        //jwtProcessor.setJWSTypeVerifier(new DefaultJOSEObjectTypeVerifier<>(new JOSEObjectType("at+jwt")));
 
-            System.out.println(signedJWT.getJWTClaimsSet().getSubject());
-            System.out.println(signedJWT.getJWTClaimsSet().getClaim("exp"));
-            return signedJWT.verify(verifier);
+        JWKSource<SecurityContext> keySource = JWKSourceBuilder
+                .create(new URL("https://demo.c2id.com/jwks.json"))
+                .retrying(true).build();
+        JWSAlgorithm expectedJWSAAlg = JWSAlgorithm.RS256;
+
+        JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(
+                expectedJWSAAlg,
+                keySource);
+        jwtProcessor.setJWSKeySelector(keySelector);
+
+        jwtProcessor.setJWTClaimsSetVerifier(new DefaultJWTClaimsVerifier<>(
+                new JWTClaimsSet.Builder().issuer("https://demo.c2id.com").build(),
+                new HashSet<>(Arrays.asList(
+                        JWTClaimNames.SUBJECT,
+                        JWTClaimNames.ISSUED_AT,
+                        JWTClaimNames.EXPIRATION_TIME, "scp", "cid",
+                        JWTClaimNames.JWT_ID))
+        ));
+        SecurityContext ctx = null;
+        JWTClaimsSet claimsSet;
+        try {
+            claimsSet = jwtProcessor.process(token, ctx);
+            System.out.println(claimsSet.toJSONObject());
+            return true;
         } catch (ParseException | JOSEException e) {
             return false;
+        } catch (BadJOSEException e) {
+            throw new RuntimeException(e);
         }
     }
 }
