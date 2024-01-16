@@ -7,6 +7,7 @@ import com.nimbusds.jose.proc.*;
 import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
 
+import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
@@ -50,7 +51,7 @@ public class TokenService {
         return this.jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
     }
 
-    public Boolean validateToken(String token) throws MalformedURLException {
+    public Boolean validateToken(String token) throws MalformedURLException { //This is nimbus own validator with JWTClaimsSet (not with JwtClaimsSet)
         ConfigurableJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
         //jwtProcessor.setJWSTypeVerifier(new DefaultJOSEObjectTypeVerifier<>(new JOSEObjectType("at+jwt")));
 
