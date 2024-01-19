@@ -7,7 +7,7 @@ import com.nimbusds.jose.proc.*;
 import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
 
-import com.nimbusds.jwt.SignedJWT;
+
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
@@ -77,7 +77,6 @@ public class TokenService {
         JWTClaimsSet claimsSet;
         try {
             claimsSet = jwtProcessor.process(token, ctx);
-            System.out.println(claimsSet.toJSONObject());
             return true;
         } catch (ParseException | JOSEException e) {
             return false;

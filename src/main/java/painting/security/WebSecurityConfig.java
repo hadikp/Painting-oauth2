@@ -18,15 +18,15 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -54,7 +54,7 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth ->auth.requestMatchers("/api/admin").hasAuthority("ADMIN")
                                                    .requestMatchers("/").permitAll()
                                                    .anyRequest().authenticated())
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
+                .oauth2ResourceServer(conf -> conf.jwt(withDefaults()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) //disable session
                 .exceptionHandling(configurer -> configurer.authenticationEntryPoint(WebSecurityConfig::handleException))
                 .httpBasic(security -> security.authenticationEntryPoint(jwtAuthEntryPoint))
@@ -67,6 +67,7 @@ public class WebSecurityConfig {
         resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     }
 
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
@@ -74,7 +75,18 @@ public class WebSecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder(){
-        return NimbusJwtDecoder.withPublicKey(rsaKeys.publicKey()).build();
+        final NimbusJwtDecoder decoder = NimbusJwtDecoder.withPublicKey(rsaKeys.publicKey()).build();
+        decoder.setJwtValidator(tokenValidator());
+        return decoder;
+    }
+
+
+    @Bean
+    public OAuth2TokenValidator<Jwt> tokenValidator() {
+        final List<OAuth2TokenValidator<Jwt>> validators = List.of(
+                new JwtTimestampValidator(),
+                new JwtIssuerValidator("https://c2id.com"));
+        return new DelegatingOAuth2TokenValidator<Jwt>(validators);
     }
 
     @Bean
@@ -82,5 +94,8 @@ public class WebSecurityConfig {
         JWK jwk = new RSAKey.Builder(rsaKeys.publicKey()).privateKey(rsaKeys.privateKey()).build();
         JWKSource<SecurityContext> jwks = new ImmutableJWKSet<>(new JWKSet(jwk));
         return new NimbusJwtEncoder(jwks);
+    }
+
+    private class JwtClaimSetVerifier {
     }
 }
