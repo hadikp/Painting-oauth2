@@ -76,14 +76,14 @@ public class WebSecurityConfig {
     @Bean
     public JwtDecoder jwtDecoder(){
         final NimbusJwtDecoder decoder = NimbusJwtDecoder.withPublicKey(rsaKeys.publicKey()).build();
-        decoder.setJwtValidator(tokenValidator());
+        //decoder.setJwtValidator(tokenValidator());
         return decoder;
     }
 
 
     @Bean
     public OAuth2TokenValidator<Jwt> tokenValidator() {
-        final List<OAuth2TokenValidator<Jwt>> validators = List.of(
+        final List<OAuth2TokenValidator<Jwt>> validators = List.of(//validator only looks at these
                 new JwtTimestampValidator(),
                 new JwtIssuerValidator("https://c2id.com"));
         return new DelegatingOAuth2TokenValidator<Jwt>(validators);
