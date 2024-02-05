@@ -11,14 +11,17 @@
 ## Technologies Used
 - Java - version 17
 - Spring Boot - version 3.2.1
+- MariaDB java client - version 3.3.2.
+- Spring Boot starter test - version 3.2.1.
 - Spring security - version 6.1.2.
-- JUnit - version 4.13.2
-- Maven - version 3.8.5
+- Flyway-mysql - version 10.7.1.
+- Spring data JPA persistent layer - version 3.2.1.
+- Spring Boot Maven plugin - version 3.2.2
 
 ## Features
 - Authorization and authentication with OAuth 2.0
-- Export report data to Google Sheets
-- Reporting and search queries with JPA Criteria Queries
+- Database migration with flyway
+- Tested with integration (mainly WebClient) tests, coverage more than 80%
 
 ## Usage
 The application runs on localhost, could be tried out with Postman or **by running tests**.
@@ -30,12 +33,10 @@ Project is: _in progress_
 ## Room for Improvement
 
 Room for improvement:
-- Revise testing structure
-- Break down large classes into smaller ones
-- Outsource code duplications into separated classes/methods
+- Improve test coverage
 
 To do:
-- Validation
+- Writing tests
 - Frontend (Vue-vite)
 
 
